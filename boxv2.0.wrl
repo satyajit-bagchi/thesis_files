@@ -1,0 +1,12 @@
+#VRML V2.0 utf8
+
+DEF B1 Transform {
+  translation 1 0 0
+  children Shape {
+    appearance Appearance {
+    }
+    geometry Box {
+      size 2.5 2.5 2.5
+    }
+  }
+}
