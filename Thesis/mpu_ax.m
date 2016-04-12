@@ -1,9 +1,6 @@
 %% Mpu Accelerometer
 
-mpu_ax_sensitivity = 1/16384; %g/LSB
 
-mpu_ax_noise_density = 300e-6; %g/rtHz
-mpu_ax_w = 460;%Hz
 mpu_ax_bias = mean(Accel_X);
 
 %myfft(Accel_X_NoBias*mpu_ax_sensitivity, 1/mpu_sampling_frequency);
