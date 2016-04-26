@@ -1,4 +1,12 @@
 %%  Mahony's filter - Matlab implementation
+
+% Notes
+% Input to this script should be:
+% acceleration in g
+% gyro readings in dps
+
+close all;
+
 gx = gx_backup;
 gy = gy_backup;
 gz = gz_backup;
@@ -18,6 +26,9 @@ gx = gx * pi/180;
 gy = gy * pi/180;
 gz = gz * pi/180;
 
+R = zeros(3,3,length(gx));
+comp_acc = [zeros(length(gx),3)];
+linear_velocity = [zeros(length(gx),3)];
 
 % q0 = [];
 % q1 = [];
@@ -42,7 +53,6 @@ q2_list = [];
 q3_list = [];
 
 rNorm = 1;
-
 
 for i=1:n
     
@@ -74,6 +84,7 @@ for i=1:n
         gx(i) = gx(i) + twoKp * halfex;
         gy(i) = gy(i) + twoKp * halfey;
         gz(i) = gz(i) + twoKp * halfez;
+        
     end
     %%Integrate rate of change
     
@@ -97,6 +108,11 @@ for i=1:n
     q2 = q2*rNorm;
     q3 = q3*rNorm;
     
+    R(:,:,i) = quatern2rotMat([q0 q1 q2 q3])';
+    comp_acc(i,:) = (R(:,:,i) * [ax(i) ay(i) az(i)]');
+    
+    
+    
     q0_list = [q0_list q0];
     q1_list = [q1_list q1];
     q2_list = [q2_list q2];
@@ -115,8 +131,51 @@ eul = quat2eul(Q,'ZYX')*180/pi;
 %eul = eul*(pi/180); %Transform to radians
 %eul=wrapTo2Pi(eul); %Wrap to 2 pi
 %eul = eul*180/pi; %Transform to degrees for plotting
+figure
+subplot(1,2,1)
 plot(eul);
 legend('Z','Y','X')
+
+% subplot(1,2,2)
+% t=1:length(gx);
+% %psi = (180/pi)*wrapToPi((pi/180)*psi);
+% %theta = (180/pi)*wrapToPi((pi/180)*theta);
+% %phi = (180/pi)*wrapToPi((pi/180)*phi);
+% %plot(t,[psi, theta, phi]);
+% %legend('psi','theta','phi');
+% 
+% figure
+% subplot(3,2,1)
+% plot(t, gx,'r');
+% legend('filtered x')
+% hold on
+% subplot(3,2,2)
+% plot(t, gx_backup,'b');
+% legend('output x')
+% 
+% 
+% 
+% subplot(3,2,3)
+% plot(t, gy,'r');
+% legend('filtered y')
+% hold on
+% subplot(3,2,4)
+% plot(t, gy_backup,'b');
+% legend('output y')
+% 
+
+%subplot(3,2,5)
+%plot(t, gz,'r');
+%legend('filtered z')
+%hold on
+%subplot(3,2,6)
+%plot(t, gz_backup,'b');
+%legend('output z')
+
+%figure
+
+%plot(comp_acc);
+%legend('Compensated acceleration');
 
 
 

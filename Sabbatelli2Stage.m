@@ -6,6 +6,11 @@
 % Rotation convention is XYZ. I'm not sure how that will affect the
 % resultant quaternion
 
+% Input to this script should be gyro in dps, acceleration in g.
+
+% This script assumes imus have been appropriately calibrated.
+
+close all;
 
 %% Setup
 gx = gx_backup;
@@ -16,6 +21,11 @@ gx = gx*pi/180;
 gy = gy*pi/180;
 gz = gz*pi/180;
 
+R = zeros(3,3,length(gx));
+comp_acc = [zeros(length(gx),3)];
+true_acc = [zeros(length(gx),3)];
+linear_velocity = [zeros(length(gx),3)];
+linear_position = [zeros(length(gx),3)];
 
 R = [2 0 0
      0 2 0
@@ -23,7 +33,7 @@ R = [2 0 0
  
  Q = 10e-6*eye(4);
  
- P = 0.5*eye(4)
+ P = 0.5*eye(4);
  
  q = [1 0 0 0 ];
  
@@ -106,11 +116,17 @@ q0_list = [q0_list q_new_posterior(1)];
 q1_list = [q1_list q_new_posterior(2)];
 q2_list = [q2_list q_new_posterior(3)];
 q3_list = [q3_list q_new_posterior(4)];
+
+R(:,:,i) = quatern2rotMat([q_new_posterior(1) q_new_posterior(2) q_new_posterior(3) q_new_posterior(4)])';
+comp_acc(i,:) = (R(:,:,i) * [ax(i) ay(i) az(i)]');
+
+
 %% Update matrices
 
 q_old_posterior = q_new_posterior; 
 P_old_posterior = P_new_posterior;
 Q_new = Q;
+
 
 end
 
@@ -120,9 +136,88 @@ eul = quat2eul(Q,'ZYX')*180/pi;
 plot(eul);
 legend('Z','Y','X')
 
-
-
-
-
-      
-
+% figure
+% subplot(1,2,1)
+% plot(comp_acc);
+% legend('Compensated X acc','Compensated Y acc','Compensated Z acc')
+% 
+% true_acc = comp_acc - [zeros(1,length(gx))',zeros(1,length(gx))',ones(1,length(gx))'];
+% %true_acc = comp_acc;
+% true_acc = true_acc.*9.81;
+% 
+% 
+% subplot(1,2,2)
+% plot(true_acc)
+% legend('True X acc','True Y acc','True Z acc');
+% 
+% probs = zeros(n,1);
+% 
+% 
+% n = length(ax);
+% avg_acc = zeros(n,3);
+% moving_variance = zeros(n,1);
+% acc_norm = zeros(n,1)
+% 
+% for i = 1:n
+%     avg_acc(i,:) = (true_acc(i,1) + true_acc(i,2) + true_acc(i,3))/3;
+%     acc_norm(i) = sqrt(ax(i)^2 + ay(i)^2 + az(i)^2);
+% end
+% 
+% dax = zeros(1,length(ax));
+% threshold = 2;
+% for i=2:length(ax)
+%     dax(i) = (ax(i-1)-ax(i))/(1/fs);
+%     dax(i) = abs(dax(i));
+% end
+% 
+% for i = 2:length(gx)
+%     moving_variance(i) = (true_acc(i,1) - avg_acc(i))^2 + (true_acc(i,2) - avg_acc(i))^2 + (true_acc(i,3) - avg_acc(i))^2;
+%     
+%     logit = -5.45298873 + 12.03298115*acc_norm(i);
+%     logit = exp(logit);
+%     
+%     prob = logit/(1 + logit);
+%     probs(i) = prob;
+%     
+%     if(prob>0.9)
+%         linear_velocity(i,:) = linear_velocity(i-1,:) + true_acc(i,:) * 1/fs;
+%     end
+%     
+%     if(acc_norm(i)<1.0)
+%         linear_velocity(i,:) = 0;
+%     end
+%     
+%    % if moving_variance(i)<moving_variance_threshold
+%    %     linear_velocity(i,:) = 0;
+%    % end
+% 
+% %    if dax(i)<dax_threshold
+% %        linear_velocity(i,:) = 0;
+% %    end
+%     
+%     
+% end
+% 
+% 
+% 
+% %Filtering velocity
+% %order = 1;
+% %filtCutOff = 0.1;
+% %[b, a] = butter(order, (2*filtCutOff)/fs, 'high');
+% %linear_velocity = filtfilt(b, a, linear_velocity)
+% 
+% for i = 2:length(gx)
+%     linear_position(i,:) = linear_position(i-1,:) + linear_velocity(i,:) * 1/fs;    
+% end
+% 
+% %Filtering position
+% 
+% 
+% %order = 1;
+% %filtCutOff = 0.1;
+% %[b, a] = butter(order, (2*filtCutOff)/fs, 'high');
+% %linear_position = filtfilt(b, a, linear_position);
+% 
+% figure
+% plot(linear_position);
+% legend('Position X', 'Position Y', 'Position Z');
